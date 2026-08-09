@@ -20,13 +20,13 @@ class UpdateInstaller {
     void Function(int received, int? total) onProgress,
   ) async {
     final dir =
-        await Directory.systemTemp.createTemp('smart-downloader-update');
+        await Directory.systemTemp.createTemp('simple-yt-downloader-update');
     final file =
         File('${dir.path}${Platform.pathSeparator}${asset.name}');
     final client = HttpClient();
     try {
       final request = await client.getUrl(Uri.parse(asset.url));
-      request.headers.set('User-Agent', 'smart-downloader');
+      request.headers.set('User-Agent', 'simple-yt-downloader');
       final response = await request.close();
       if (response.statusCode != 200) {
         throw UpdateInstallException(
@@ -71,7 +71,7 @@ class UpdateInstaller {
   /// instructions.
   static Future<void> installMacOS(File dmg) async {
     final mountDir =
-        await Directory.systemTemp.createTemp('smart-downloader-dmg');
+        await Directory.systemTemp.createTemp('simple-yt-downloader-dmg');
     try {
       final attach = await Process.run('hdiutil', [
         'attach',

@@ -19,18 +19,18 @@ void main() async {
     size: Size(900, 600),
     minimumSize: Size(800, 500),
     center: true,
-    title: 'Smart Downloader',
+          title: 'Simple YT Downloader',
   );
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
     await windowManager.focus();
   });
 
-  runApp(const SmartDownloaderApp());
+  runApp(const SimpleYtDownloaderApp());
 }
 
-class SmartDownloaderApp extends StatelessWidget {
-  const SmartDownloaderApp({super.key});
+class SimpleYtDownloaderApp extends StatelessWidget {
+  const SimpleYtDownloaderApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class SmartDownloaderApp extends StatelessWidget {
       ],
       child: Consumer<ThemeController>(
         builder: (context, themeController, _) => MaterialApp(
-          title: 'Smart Downloader',
+    title: 'Simple YT Downloader',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),

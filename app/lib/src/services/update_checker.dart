@@ -34,8 +34,8 @@ class UpdateInfo {
   /// The best installer asset for the current platform.
   ///
   /// Prefers the versioned name when a platform ships one; otherwise falls
-  /// back to the platform's file-extension pattern so unversioned assets
-  /// (e.g. the macOS SmartDownloader.dmg) still resolve.
+  /// back to the platform's file-extension pattern so unversioned legacy
+  /// assets still resolve.
   ///
   /// [operatingSystem] overrides Platform.operatingSystem for testing.
   UpdateAsset? assetForPlatform({String? operatingSystem}) {
@@ -44,10 +44,10 @@ class UpdateInfo {
     final patterns = <RegExp>[];
     switch (os) {
       case 'windows':
-        versioned.add('SmartDownloader-$latestVersion-Setup.exe');
+        versioned.add('simple-yt-downloader-$latestVersion-Setup.exe');
         patterns.add(RegExp(r'Setup\.exe$'));
       case 'macos':
-        versioned.add('SmartDownloader.dmg');
+        versioned.add('simple-yt-downloader-$latestVersion.dmg');
         patterns.add(RegExp(r'\.dmg$'));
       case 'linux':
         versioned.add('simple-yt-downloader_${latestVersion}_all.deb');
@@ -77,7 +77,7 @@ class UpdateChecker {
       final request = await client.getUrl(
         Uri.parse('https://api.github.com/repos/$_repo/releases/latest'),
       );
-      request.headers.set('User-Agent', 'smart-downloader');
+      request.headers.set('User-Agent', 'simple-yt-downloader');
       request.headers.set('Accept', 'application/vnd.github+json');
       final response = await request.close();
       if (response.statusCode != 200) return null;

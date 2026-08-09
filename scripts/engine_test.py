@@ -132,7 +132,7 @@ def main():
     args = parser.parse_args()
 
     if args.download_dir is None:
-        args.download_dir = tempfile.mkdtemp(prefix="smart-downloader-spike-")
+        args.download_dir = tempfile.mkdtemp(prefix="simple-yt-downloader-spike-")
         print(f"Fresh download dir: {args.download_dir}")
 
     if args.engine:

@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:smart_downloader/src/services/update_checker.dart';
-import 'package:smart_downloader/src/services/update_installer.dart';
+import 'package:simple_yt_downloader/src/services/update_checker.dart';
+import 'package:simple_yt_downloader/src/services/update_installer.dart';
 
 void main() {
   group('UpdateInfo.isNewerThan', () {
@@ -44,17 +44,27 @@ void main() {
     test('windows picks versioned Setup.exe', () {
       final i = info([
         'simple-yt-downloader_2.1.0_all.deb',
-        'SmartDownloader.dmg',
-        'SmartDownloader-2.1.0-Setup.exe',
+        'simple-yt-downloader-2.1.0.dmg',
+        'simple-yt-downloader-2.1.0-Setup.exe',
       ]);
       final a = i.assetForPlatform(operatingSystem: 'windows')!;
-      expect(a.name, 'SmartDownloader-2.1.0-Setup.exe');
+      expect(a.name, 'simple-yt-downloader-2.1.0-Setup.exe');
       expect(a.url, assetUrl + a.name);
+    });
+
+    test('macos picks versioned .dmg', () {
+      final i = info([
+        'simple-yt-downloader-2.1.0-Setup.exe',
+        'simple-yt-downloader-2.1.0.dmg',
+        'simple-yt-downloader_2.1.0_all.deb',
+      ]);
+      final a = i.assetForPlatform(operatingSystem: 'macos')!;
+      expect(a.name, 'simple-yt-downloader-2.1.0.dmg');
     });
 
     test('macos falls back to .dmg when unversioned', () {
       final i = info([
-        'SmartDownloader-2.1.0-Setup.exe',
+        'simple-yt-downloader-2.1.0-Setup.exe',
         'SmartDownloader.dmg',
         'simple-yt-downloader_2.1.0_all.deb',
       ]);
@@ -64,8 +74,8 @@ void main() {
 
     test('linux picks versioned .deb', () {
       final i = info([
-        'SmartDownloader-2.1.0-Setup.exe',
-        'SmartDownloader.dmg',
+        'simple-yt-downloader-2.1.0-Setup.exe',
+        'simple-yt-downloader-2.1.0.dmg',
         'simple-yt-downloader_2.1.0_all.deb',
       ]);
       final a = i.assetForPlatform(operatingSystem: 'linux')!;
@@ -95,7 +105,7 @@ void main() {
 
       final updates = <(int, int?)>[];
       final asset = UpdateAsset(
-        name: 'SmartDownloader-2.1.0-Setup.exe',
+        name: 'simple-yt-downloader-2.1.0-Setup.exe',
         url: 'http://127.0.0.1:${server.port}/x.exe',
       );
       final file = await UpdateInstaller.download(
@@ -117,7 +127,7 @@ void main() {
       });
 
       final asset = UpdateAsset(
-        name: 'SmartDownloader.dmg',
+        name: 'simple-yt-downloader-2.1.0.dmg',
         url: 'http://127.0.0.1:${server.port}/missing.dmg',
       );
       expect(

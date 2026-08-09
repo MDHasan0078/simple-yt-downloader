@@ -1,4 +1,4 @@
-# Smart Downloader
+# Simple YT Downloader
 
 [![Latest release](https://img.shields.io/github/v/release/MDHasan0078/simple-yt-downloader?label=latest&style=flat-square)](https://github.com/MDHasan0078/simple-yt-downloader/releases)
 [![License](https://img.shields.io/github/license/MDHasan0078/simple-yt-downloader?style=flat-square)](LICENSE)
@@ -58,8 +58,8 @@ Download the latest package for your platform from
 | Platform | Package | Install |
 |----------|---------|---------|
 | Linux | `simple-yt-downloader_<version>_all.deb` | `sudo dpkg -i simple-yt-downloader_*.deb` then `sudo apt install -f -y` |
-| Windows | `SmartDownloader-<version>-Setup.exe` | Run the installer |
-| macOS | `SmartDownloader.dmg` | Open the DMG and drag the app to Applications |
+| Windows | `simple-yt-downloader-<version>-Setup.exe` | Run the installer |
+| macOS | `simple-yt-downloader-<version>.dmg` | Open the DMG and drag the app to Applications |
 
 ### Dependencies
 

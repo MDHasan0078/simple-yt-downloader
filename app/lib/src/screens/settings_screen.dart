@@ -351,7 +351,7 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('Updating Smart Downloader'),
+        title: const Text('Updating Simple YT Downloader'),
         content: ValueListenableBuilder<String>(
           valueListenable: status,
           builder: (context, label, _) {
@@ -426,7 +426,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Update complete'),
         content: const Text(
-          'Smart Downloader was updated to the latest version.\n'
+          'Simple YT Downloader was updated to the latest version.\n'
           'Please restart the app to use it.',
         ),
         actions: [

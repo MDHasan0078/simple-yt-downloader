@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.smartdownloader" "\0"
-            VALUE "FileDescription", "smart_downloader" "\0"
+            VALUE "CompanyName", "com.simpleytdownloader" "\0"
+            VALUE "FileDescription", "Simple YT Downloader" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "smart_downloader" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.smartdownloader. All rights reserved." "\0"
-            VALUE "OriginalFilename", "smart_downloader.exe" "\0"
-            VALUE "ProductName", "smart_downloader" "\0"
+            VALUE "InternalName", "simple_yt_downloader" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.simpleytdownloader. All rights reserved." "\0"
+            VALUE "OriginalFilename", "simple_yt_downloader.exe" "\0"
+            VALUE "ProductName", "Simple YT Downloader" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

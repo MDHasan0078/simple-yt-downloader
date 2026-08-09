@@ -92,7 +92,7 @@ jobs:
           Write-Host "Installing $($setup.FullName) -> $target"
           Start-Process -FilePath $setup.FullName -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$target" -Wait
           $required = @(
-            "$target\smart_downloader.exe",
+            "$target\simple_yt_downloader.exe",
             "$target\engine\engine.exe",
             "$target\engine\yt-dlp.exe",
             "$target\engine\ffmpeg.exe",
@@ -107,7 +107,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: smart-downloader-windows
+          name: simple-yt-downloader-windows
           path: app/build/*Setup.exe
 
       - name: Attach to GitHub Release
@@ -155,28 +155,30 @@ jobs:
 
       - name: Bundle engine into .app
         run: |
-          APP="app/build/macos/Build/Products/Release/smart_downloader.app"
+          APP="app/build/macos/Build/Products/Release/simple_yt_downloader.app"
           mkdir -p "$APP/Contents/Resources/engine"
           cp -R core/build/dist/engine/* "$APP/Contents/Resources/engine/"
           chmod +x "$APP/Contents/Resources/engine/engine"
-          plutil -replace CFBundleName -string "Smart Downloader" "$APP/Contents/Info.plist"
-          plutil -replace CFBundleDisplayName -string "Smart Downloader" "$APP/Contents/Info.plist"
+          plutil -replace CFBundleName -string "Simple YT Downloader" "$APP/Contents/Info.plist"
+          plutil -replace CFBundleDisplayName -string "Simple YT Downloader" "$APP/Contents/Info.plist"
 
       - name: Create .dmg
         run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ "$VERSION" = "$GITHUB_REF" ]; then VERSION="0.0.0"; fi
           cd app/build/macos/Build/Products
           mkdir -p dmg-root
-          cp -R "Release/smart_downloader.app" dmg-root/
+          cp -R "Release/simple_yt_downloader.app" dmg-root/
           ln -s /Applications dmg-root/Applications
-          hdiutil create -volname "Smart Downloader" -srcfolder dmg-root \
-            -ov -format UDZO "SmartDownloader.dmg"
+          hdiutil create -volname "Simple YT Downloader" -srcfolder dmg-root \
+            -ov -format UDZO "simple-yt-downloader-$VERSION.dmg"
 
       - name: Smoke test dmg contents
         run: |
           cd app/build/macos/Build/Products
-          hdiutil attach -nobrowse -mountpoint /tmp/sd-dmg SmartDownloader.dmg
-          APP="/tmp/sd-dmg/Smart Downloader.app"
-          [ -d "$APP" ] || APP="/tmp/sd-dmg/smart_downloader.app"
+          hdiutil attach -nobrowse -mountpoint /tmp/sd-dmg simple-yt-downloader-*.dmg
+          APP="/tmp/sd-dmg/Simple YT Downloader.app"
+          [ -d "$APP" ] || APP="/tmp/sd-dmg/simple_yt_downloader.app"
           for f in engine/engine engine/ffmpeg engine/ffprobe engine/yt-dlp; do
             if [ ! -x "$APP/Contents/Resources/$f" ]; then
               echo "missing: $f"
@@ -190,12 +192,12 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: smart-downloader-macos
-          path: app/build/macos/Build/Products/SmartDownloader.dmg
+          name: simple-yt-downloader-macos
+          path: app/build/macos/Build/Products/simple-yt-downloader-*.dmg
 
       - name: Attach to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: "app/build/macos/Build/Products/SmartDownloader.dmg"
+          files: "app/build/macos/Build/Products/simple-yt-downloader-*.dmg"
           overwrite: true

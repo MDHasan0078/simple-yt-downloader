@@ -1,4 +1,4 @@
-# smart_downloader
+# simple_yt_downloader
 
 A new Flutter project.
 

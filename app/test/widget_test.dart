@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:smart_downloader/main.dart';
-import 'package:smart_downloader/src/engine/engine_provider.dart';
-import 'package:smart_downloader/src/screens/settings_screen.dart';
-import 'package:smart_downloader/src/theme/theme_controller.dart';
+import 'package:simple_yt_downloader/main.dart';
+import 'package:simple_yt_downloader/src/engine/engine_provider.dart';
+import 'package:simple_yt_downloader/src/screens/settings_screen.dart';
+import 'package:simple_yt_downloader/src/theme/theme_controller.dart';
 
 void main() {
   testWidgets('App renders', (WidgetTester tester) async {
-    await tester.pumpWidget(const SmartDownloaderApp());
+    await tester.pumpWidget(const SimpleYtDownloaderApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Smart Downloader'), findsOneWidget);
+    expect(find.text('Simple YT Downloader'), findsOneWidget);
     expect(find.text('Add Download'), findsOneWidget);
     expect(find.text('Queue'), findsOneWidget);
     expect(find.text('Settings'), findsWidgets);

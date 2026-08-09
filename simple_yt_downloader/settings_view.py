@@ -154,7 +154,7 @@ class SettingsView(Gtk.Box):
         header.pack_start(title_box, True, True, 0)
         card.pack_start(header, False, False, 0)
 
-        desc = Gtk.Label(label="Smart Downloader — a fast, lightweight, open-source "
+        desc = Gtk.Label(label="Simple YT Downloader — a fast, lightweight, open-source "
                                "YouTube downloader. Every quality from 144p to 10K, "
                                "custom resolution support, selectable 30/60/90 fps, "
                                "playlist support and pause/resume.")

@@ -1,4 +1,4 @@
-# Smart Downloader — engine core
+# Simple YT Downloader — engine core
 
 Cross-platform download engine shared by the desktop clients (GTK Linux app,
 future Flutter Windows/macOS apps).
