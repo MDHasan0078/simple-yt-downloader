@@ -1,3 +1,9 @@
+simple-yt-downloader (2.3.1) unstable; urgency=medium
+
+  * chore: GitHub repo renamed to MDHasan0078/simple-yt-downloader; updater
+    and docs URLs updated to the new repository
+
+ -- MD. Mahmudul Hasan <mdhasan0078@users.noreply.github.com>  Fri, 07 Aug 2026 18:32:39 +0000
 simple-yt-downloader (2.3.0) unstable; urgency=medium
 
   * feat: cancel/retry UX -- cancelled videos and playlists (pre-start or
