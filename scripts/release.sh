@@ -79,4 +79,4 @@ git -C "$REPO_ROOT" push origin "v$NEW_VERSION"
 
 echo "Pushed v$NEW_VERSION. GitHub Actions is building the .deb and will"
 echo "attach it to the release. Verify at:"
-echo "  https://github.com/MDHasan0078/smart-downloader/releases"
+echo "  https://github.com/MDHasan0078/simple-yt-downloader/releases"

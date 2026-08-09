@@ -68,7 +68,7 @@ class UpdateInfo {
 }
 
 class UpdateChecker {
-  static const _repo = 'MDHasan0078/smart-downloader';
+  static const _repo = 'MDHasan0078/simple-yt-downloader';
 
   Future<UpdateInfo?> checkForUpdate() async {
     final client = HttpClient()

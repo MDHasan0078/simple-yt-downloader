@@ -1,6 +1,6 @@
 # Simple YT Downloader (GTK edition)
 
-[![Latest release](https://img.shields.io/github/v/release/MDHasan0078/smart-downloader?label=latest)](https://github.com/MDHasan0078/smart-downloader/releases)
+[![Latest release](https://img.shields.io/github/v/release/MDHasan0078/simple-yt-downloader?label=latest)](https://github.com/MDHasan0078/simple-yt-downloader/releases)
 
 Smart Downloader — a fast, lightweight, open-source YouTube downloader.
 Every quality from 144p to 10K, custom resolution support, selectable
@@ -54,7 +54,7 @@ Linux distros (tested on Linux Mint).
 ## Install
 
 Download the latest `.deb` from
-[Releases](https://github.com/MDHasan0078/smart-downloader/releases) and install it:
+[Releases](https://github.com/MDHasan0078/simple-yt-downloader/releases) and install it:
 
 ```bash
 sudo dpkg -i simple-yt-downloader_*.deb
@@ -77,8 +77,8 @@ These are declared in `packaging/control`'s `Depends:` line, so a normal
 ## Running from source
 
 ```bash
-git clone https://github.com/MDHasan0078/smart-downloader.git
-cd smart-downloader
+git clone https://github.com/MDHasan0078/simple-yt-downloader.git
+cd simple-yt-downloader
 python3 run.py
 ```
 
