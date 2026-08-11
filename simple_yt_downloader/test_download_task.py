@@ -10,12 +10,31 @@ from simple_yt_downloader.download_task import (
     PHASE_AUDIO,
     PHASE_MERGE,
     PHASE_VIDEO,
+    AUDIO_PASSTHROUGH_CODECS,
     DownloadTask,
     PhaseTracker,
+    _split_custom_audio_quality,
     _split_custom_quality,
     phase_for_stream,
     phase_label,
 )
+
+
+class SplitCustomAudioQualityTests(unittest.TestCase):
+    def test_preset_is_bitrate(self):
+        self.assertEqual(_split_custom_audio_quality("192"), 192)
+
+    def test_custom_parses_kbps(self):
+        self.assertEqual(_split_custom_audio_quality("custom:320"), 320)
+
+    def test_malformed_custom_falls_back_to_192(self):
+        for bad in ("custom:junk", "custom:", "custom:-5", "custom:0"):
+            self.assertEqual(_split_custom_audio_quality(bad), 192)
+
+    def test_missing_value_falls_back_to_192(self):
+        self.assertEqual(_split_custom_audio_quality(""), 192)
+        self.assertEqual(_split_custom_audio_quality(None), 192)
+        self.assertEqual(_split_custom_audio_quality("abc"), 192)
 
 
 class SplitCustomQualityTests(unittest.TestCase):
@@ -83,6 +102,65 @@ class BuildFormatStringTests(unittest.TestCase):
         self.assertIn("bestvideo[height<=720][ext=mkv]+bestaudio", chain)
         for part in chain:
             self.assertNotIn("ext<=", part)
+
+    def test_audio_passthrough_prefers_codec_then_falls_back(self):
+        task = self._task(mode="audio", audio_codec="ec-3")
+        self.assertEqual(
+            task.build_format_string(),
+            "bestaudio[acodec=ec-3]/bestaudio",
+        )
+
+    def test_audio_transcode_uses_plain_bestaudio(self):
+        task = self._task(mode="audio", audio_codec="")
+        self.assertEqual(task.build_format_string(), "bestaudio")
+
+    def test_passthrough_codecs_are_well_formed(self):
+        for codec_id in AUDIO_PASSTHROUGH_CODECS:
+            task = self._task(mode="audio", audio_codec=codec_id)
+            expected = f"bestaudio[acodec={codec_id}]/bestaudio"
+            self.assertEqual(task.build_format_string(), expected)
+
+
+class BuildAudioPostprocessTests(unittest.TestCase):
+    def _task(self, **kw):
+        task = DownloadTask("https://example.com/v", "/tmp")
+        task.mode = "audio"
+        for key, value in kw.items():
+            setattr(task, key, value)
+        return task
+
+    def test_transcode_default_quality(self):
+        task = self._task()
+        self.assertEqual(
+            task.build_postprocess_args(),
+            ["-x", "--audio-format", "mp3", "--audio-quality", "192K"],
+        )
+
+    def test_transcode_best_quality_maps_to_zero(self):
+        task = self._task(audio_quality="best")
+        self.assertIn("--audio-quality", task.build_postprocess_args())
+        self.assertIn("0", task.build_postprocess_args())
+
+    def test_transcode_custom_bitrate(self):
+        task = self._task(audio_quality="custom:320")
+        args = task.build_postprocess_args()
+        self.assertIn("320K", args)
+
+    def test_transcode_bad_custom_bitrate_falls_back(self):
+        task = self._task(audio_quality="custom:junk")
+        self.assertIn("192K", task.build_postprocess_args())
+
+    def test_passthrough_skips_postprocess_entirely(self):
+        task = self._task(audio_codec="ac-4", audio_quality="custom:999")
+        self.assertEqual(task.build_postprocess_args(), [])
+
+    def test_passthrough_for_every_codec_id(self):
+        for codec_id in AUDIO_PASSTHROUGH_CODECS:
+            task = self._task(audio_codec=codec_id)
+            self.assertEqual(
+                task.build_postprocess_args(), [],
+                f"passthrough for {codec_id} must not run ffmpeg",
+            )
 
 
 class PhaseForStreamTests(unittest.TestCase):

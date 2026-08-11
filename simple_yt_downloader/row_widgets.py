@@ -31,8 +31,19 @@ VIDEO_QUALITIES = [
 ]
 AUDIO_FORMATS = ["mp3", "m4a", "opus", "wav", "flac"]
 AUDIO_QUALITIES = [
-    ("128", "128 kbps"), ("192", "192 kbps"),
-    ("256", "256 kbps"), ("best", "Best available"),
+    ("64", "64 kbps"), ("96", "96 kbps"), ("128", "128 kbps"),
+    ("192", "192 kbps"), ("256", "256 kbps"), ("320", "320 kbps"),
+    ("best", "Best available"),
+]
+# The "Source" dropdown: "" = re-encode via Format + Quality (ffmpeg), any
+# other value is a yt-dlp acodec id downloaded natively with no re-encode.
+AUDIO_SOURCES = [
+    ("", "Re-encode"),
+    ("opus", "Native Opus"),
+    ("mp4a", "Native AAC / M4A"),
+    ("ac-3", "Dolby Digital (AC-3)"),
+    ("ec-3", "Dolby Digital Plus / Atmos (EC-3)"),
+    ("ac-4", "Dolby Atmos (AC-4)"),
 ]
 
 # Empty value = "no fps constraint", i.e. let yt-dlp pick whatever fps
@@ -126,6 +137,7 @@ class ModeQualityBar(Gtk.Box):
         self._audio_quality_sizes = {}
         self._custom_w = None
         self._custom_h = None
+        self._custom_kbps = None
         self._last_quality_id = None
         self._suppress_quality_changed = False
 
@@ -141,14 +153,22 @@ class ModeQualityBar(Gtk.Box):
         self.format_combo = Gtk.ComboBoxText()
         self.quality_combo = Gtk.ComboBoxText()
         self.fps_combo = Gtk.ComboBoxText()
-        for combo in (self.format_combo, self.quality_combo, self.fps_combo):
+        self.source_combo = Gtk.ComboBoxText()
+        for combo in (self.format_combo, self.quality_combo, self.fps_combo, self.source_combo):
             _swallow_combo_scroll(combo)
+        for value, display in AUDIO_SOURCES:
+            self.source_combo.append(value, display)
+        self.source_combo.set_active(0)
+        self.source_combo.set_no_show_all(True)
+        self.source_combo.set_visible(False)
         self.pack_end(self.quality_combo, False, False, 0)
         self.pack_end(self.format_combo, False, False, 0)
+        self.pack_end(self.source_combo, False, False, 0)
         self.pack_end(self.fps_combo, False, False, 0)
 
         self.quality_combo.connect("changed", self._on_quality_changed)
         self.quality_combo.connect("popup", self._on_quality_popup)
+        self.source_combo.connect("changed", self._on_source_changed)
 
         self._defaults = defaults
         self._populate_for_mode("video")
@@ -187,9 +207,14 @@ class ModeQualityBar(Gtk.Box):
                 self.fps_combo.append(value, display)
             self.fps_combo.set_active(0)
             self.fps_combo.set_sensitive(True)
+            self.fps_combo.set_visible(True)
+
+            self.source_combo.set_sensitive(True)
+            self.source_combo.set_visible(False)
+            self.source_combo.set_active_id("")
 
             default_q = self._defaults.get("default_video_quality", "720")
-            self._set_quality_active(default_q, fallback_index=4)
+            self._set_quality_active(default_q, fallback_index=3)
         else:
             for fmt in AUDIO_FORMATS:
                 self.format_combo.append_text(fmt.upper())
@@ -198,9 +223,24 @@ class ModeQualityBar(Gtk.Box):
             self.format_combo.set_active(idx)
 
             self.fps_combo.set_sensitive(False)
+            self.fps_combo.set_visible(False)
+
+            self.source_combo.set_sensitive(True)
+            self.source_combo.set_visible(True)
+            default_codec = self._defaults.get("default_audio_codec", "")
+            self.source_combo.set_active_id(default_codec)
+            self._update_source_sensitivity()
 
             default_q = self._defaults.get("default_audio_quality", "192")
-            self._set_quality_active(default_q, fallback_index=1)
+            self._set_quality_active(default_q, fallback_index=3)
+
+    def _on_source_changed(self, combo):
+        self._update_source_sensitivity()
+
+    def _update_source_sensitivity(self):
+        passthrough = bool(self.source_combo.get_active_id())
+        self.format_combo.set_sensitive(not passthrough)
+        self.quality_combo.set_sensitive(not passthrough)
 
     def _populate_quality_combo(self):
         self.quality_combo.remove_all()
@@ -219,6 +259,11 @@ class ModeQualityBar(Gtk.Box):
                 size_text = self._audio_quality_sizes.get(value)
                 label = f"{display} ({size_text})" if size_text else display
                 self.quality_combo.append(value, label)
+            if self._custom_kbps:
+                display = f"Custom ({self._custom_kbps} kbps)"
+            else:
+                display = "Custom…"
+            self.quality_combo.append(CUSTOM_QUALITY_ID, display)
 
     def _set_quality_active(self, active_id, fallback_index=-1):
         self._suppress_quality_changed = True
@@ -234,18 +279,28 @@ class ModeQualityBar(Gtk.Box):
         self._last_quality_id = combo.get_active_id()
 
     def _on_quality_changed(self, combo):
-        if self._suppress_quality_changed or self.mode != "video":
+        if self._suppress_quality_changed:
             return
         if combo.get_active_id() != CUSTOM_QUALITY_ID:
             return
-        dims = self._ask_custom_quality()
-        if dims is None:
-            self._set_quality_active(self._last_quality_id, fallback_index=4)
-            return
-        self._custom_w, self._custom_h = dims
-        self._last_quality_id = CUSTOM_QUALITY_ID
-        self._populate_quality_combo()
-        self._set_quality_active(CUSTOM_QUALITY_ID, fallback_index=4)
+        if self.mode == "video":
+            dims = self._ask_custom_quality()
+            if dims is None:
+                self._set_quality_active(self._last_quality_id, fallback_index=4)
+                return
+            self._custom_w, self._custom_h = dims
+            self._last_quality_id = CUSTOM_QUALITY_ID
+            self._populate_quality_combo()
+            self._set_quality_active(CUSTOM_QUALITY_ID, fallback_index=4)
+        else:
+            kbps = self._ask_custom_audio_quality()
+            if kbps is None:
+                self._set_quality_active(self._last_quality_id, fallback_index=3)
+                return
+            self._custom_kbps = kbps
+            self._last_quality_id = CUSTOM_QUALITY_ID
+            self._populate_quality_combo()
+            self._set_quality_active(CUSTOM_QUALITY_ID, fallback_index=3)
 
     def _ask_custom_quality(self):
         dialog = Gtk.Dialog(
@@ -286,16 +341,54 @@ class ModeQualityBar(Gtk.Box):
             return None
         return width, height
 
+    def _ask_custom_audio_quality(self):
+        dialog = Gtk.Dialog(
+            title="Custom audio quality",
+            parent=self.get_toplevel() or None,
+            modal=True,
+        )
+        dialog.add_buttons(
+            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OK, Gtk.ResponseType.OK,
+        )
+        content = dialog.get_content_area()
+        content.set_spacing(8)
+        grid = Gtk.Grid(column_spacing=8, row_spacing=8)
+        content.add(grid)
+
+        bitrate_label = Gtk.Label(label="Bitrate (kbps):")
+        bitrate_label.set_xalign(1)
+        bitrate_spin = Gtk.SpinButton.new_with_range(8, 512, 16)
+        bitrate_spin.set_numeric(True)
+        bitrate_spin.set_value(self._custom_kbps or 192)
+        grid.attach(bitrate_label, 0, 0, 1, 1)
+        grid.attach(bitrate_spin, 1, 0, 1, 1)
+        dialog.show_all()
+
+        response = dialog.run()
+        kbps = int(bitrate_spin.get_value())
+        dialog.destroy()
+        if response != Gtk.ResponseType.OK:
+            return None
+        return kbps
+
     def get_selection(self):
+        codec = self.source_combo.get_active_id() or ""
+        if self.mode == "audio" and codec:
+            # Passthrough: Format and Quality are disabled and irrelevant --
+            # the native codec stream is downloaded as-is.
+            return self.mode, "", None, "", codec
         fmt = (self.format_combo.get_active_text() or "").lower()
         quality_id = self.quality_combo.get_active_id()
         if quality_id == CUSTOM_QUALITY_ID:
-            if self._custom_w and self._custom_h:
+            if self.mode == "video" and self._custom_w and self._custom_h:
                 quality_id = f"custom:{self._custom_w}x{self._custom_h}"
+            elif self.mode == "audio" and self._custom_kbps:
+                quality_id = f"custom:{self._custom_kbps}"
             else:
                 quality_id = None
         fps = self.fps_combo.get_active_id() or ""
-        return self.mode, fmt, quality_id, fps
+        return self.mode, fmt, quality_id, fps, codec
 
     def set_video_quality_sizes(self, size_map):
         self._video_quality_sizes = {k: v for k, v in size_map.items() if v}
@@ -319,6 +412,9 @@ class ModeQualityBar(Gtk.Box):
         self.format_combo.set_sensitive(sensitive)
         self.quality_combo.set_sensitive(sensitive)
         self.fps_combo.set_sensitive(sensitive)
+        self.source_combo.set_sensitive(sensitive)
+        if sensitive:
+            self._update_source_sensitivity()
 
 
 class VideoRow(Gtk.Box):
@@ -464,7 +560,7 @@ class VideoRow(Gtk.Box):
         return False
 
     def _on_start_clicked(self, _btn):
-        mode, fmt, quality, fps = self.quality_bar.get_selection()
+        mode, fmt, quality, fps, codec = self.quality_bar.get_selection()
         self.task.mode = mode
         if mode == "video":
             self.task.video_format = fmt
@@ -473,6 +569,7 @@ class VideoRow(Gtk.Box):
         else:
             self.task.audio_format = fmt
             self.task.audio_quality = quality
+            self.task.audio_codec = codec
 
         self._started = True
         self._cancelled_handled = False
@@ -553,7 +650,7 @@ class VideoRow(Gtk.Box):
         self.task.cancelled = False
         self.task.process = None
 
-        mode, fmt, quality, fps = self.quality_bar.get_selection()
+        mode, fmt, quality, fps, codec = self.quality_bar.get_selection()
         self.task.mode = mode
         if mode == "video":
             self.task.video_format = fmt
@@ -562,6 +659,7 @@ class VideoRow(Gtk.Box):
         else:
             self.task.audio_format = fmt
             self.task.audio_quality = quality
+            self.task.audio_codec = codec
         self._started = True
 
         self.retry_btn.set_visible(False)
@@ -847,8 +945,8 @@ class PlaylistRow(Gtk.Box):
         _set_button_icon(self.expand_btn, icon_name)
 
     def _on_start_clicked(self, _btn):
-        mode, fmt, quality, fps = self.quality_bar.get_selection()
-        self._mode, self._fmt, self._quality, self._fps = mode, fmt, quality, fps
+        mode, fmt, quality, fps, codec = self.quality_bar.get_selection()
+        self._mode, self._fmt, self._quality, self._fps, self._codec = mode, fmt, quality, fps, codec
         self.quality_bar.set_sensitive_all(False)
         self._started = True
         self.start_btn.set_visible(False)
@@ -902,6 +1000,7 @@ class PlaylistRow(Gtk.Box):
             else:
                 task.audio_format = self._fmt
                 task.audio_quality = self._quality
+                task.audio_codec = self._codec
             self.current_task = task
             self.current_idx = i
 
@@ -991,6 +1090,7 @@ class PlaylistRow(Gtk.Box):
         else:
             task.audio_format = self._fmt
             task.audio_quality = self._quality
+            task.audio_codec = self._codec
 
         GLib.idle_add(self._set_child_status, idx, "downloading", 0)
         threading.Thread(target=self._run_single_retry, args=(task, idx), daemon=True).start()
@@ -1144,8 +1244,8 @@ class PlaylistRow(Gtk.Box):
         self.pause_btn.set_visible(True)
         self.cancel_btn.set_visible(True)
         self.cancel_btn.set_sensitive(True)
-        mode, fmt, quality, fps = self.quality_bar.get_selection()
-        self._mode, self._fmt, self._quality, self._fps = mode, fmt, quality, fps
+        mode, fmt, quality, fps, codec = self.quality_bar.get_selection()
+        self._mode, self._fmt, self._quality, self._fps, self._codec = mode, fmt, quality, fps, codec
         self.quality_bar.set_sensitive_all(False)
         effective = max(len(self.entries) - len(self.removed), 0)
         shown = min(len(self.done), effective)

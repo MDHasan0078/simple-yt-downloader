@@ -20,6 +20,7 @@ DEFAULTS = {
     "default_video_quality": "720",
     "default_audio_format": "mp3",
     "default_audio_quality": "192",
+    "default_audio_codec": "",  # "" = transcode; else a yt-dlp acodec id (passthrough)
     "theme": "dark",  # "light" | "dark"
     "first_run_done": False,
 }
@@ -60,7 +61,7 @@ def _sanitize(settings):
             settings[key] = DEFAULTS[key]
     for key in (
         "cookies_file", "default_video_format", "default_video_quality",
-        "default_audio_format", "default_audio_quality",
+        "default_audio_format", "default_audio_quality", "default_audio_codec",
     ):
         if not isinstance(settings.get(key), str):
             settings[key] = DEFAULTS[key]

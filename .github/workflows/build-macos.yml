@@ -17,6 +17,10 @@ jobs:
         with:
           go-version-file: core-go/go.mod
 
+      - name: Test engine
+        run: |
+          cd core-go && go vet ./... && go test ./...
+
       - name: Build engine binary
         run: |
           mkdir -p core/build/dist/engine

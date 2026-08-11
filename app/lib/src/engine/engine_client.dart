@@ -106,6 +106,7 @@ class EngineClient {
     String? videoQuality,
     String? audioFormat,
     String? audioQuality,
+    String? audioCodec,
     String? downloadDir,
     String? cookiesFile,
     String? taskId,
@@ -116,6 +117,7 @@ class EngineClient {
     if (videoQuality != null) args['video_quality'] = videoQuality;
     if (audioFormat != null) args['audio_format'] = audioFormat;
     if (audioQuality != null) args['audio_quality'] = audioQuality;
+    if (audioCodec != null) args['audio_codec'] = audioCodec;
     if (downloadDir != null) args['download_dir'] = downloadDir;
     if (cookiesFile != null) args['cookies_file'] = cookiesFile;
     if (taskId != null) args['task_id'] = taskId;

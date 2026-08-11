@@ -208,7 +208,19 @@ def estimate_quality_sizes(formats, tiers=VIDEO_QUALITY_TIERS):
     return sizes
 
 
-AUDIO_QUALITY_TIERS = ("128", "192", "256", "best")
+AUDIO_QUALITY_TIERS = ("64", "96", "128", "192", "256", "320", "best")
+
+# Source-codec passthrough options. Unlike AUDIO_FORMATS (which are ffmpeg
+# transcode targets), these pick a native YouTube stream by audio codec and
+# download it as-is -- no re-encode, no quality loss. Value is the yt-dlp
+# acodec filter token ("" = re-encode via Format + Quality).
+AUDIO_PASSTHROUGH_CODECS = {
+    "ac-3": "Dolby Digital (AC-3)",
+    "ec-3": "Dolby Digital Plus / Atmos (EC-3)",
+    "ac-4": "Dolby Atmos (AC-4)",
+    "opus": "Native Opus",
+    "mp4a": "Native AAC / M4A",
+}
 
 
 def estimate_audio_quality_sizes(duration_seconds, formats=None, tiers=AUDIO_QUALITY_TIERS):
@@ -261,6 +273,25 @@ def sum_quality_sizes(size_dicts, tiers=None):
     return {tier: (totals[tier] if known[tier] else None) for tier in tiers}
 
 
+def _split_custom_audio_quality(quality):
+    """Returns the bitrate (kbps) for an audio quality id.
+
+    A preset like "192" becomes 192. A custom selection like "custom:320"
+    becomes 320. Falls back to a safe 192 kbps when the value is missing or
+    malformed (mirrors the video _split_custom_quality pattern).
+    """
+    value = quality or "192"
+    if isinstance(value, str) and value.startswith("custom:"):
+        try:
+            kbps = int(value.split(":", 1)[1])
+            if kbps > 0:
+                return kbps
+        except (ValueError, AttributeError):
+            pass
+        return 192
+    return int(value) if str(value).isdigit() else 192
+
+
 def _split_custom_quality(quality):
     """Returns (height, width) for a video quality id.
 
@@ -300,6 +331,7 @@ class DownloadTask:
         self.video_fps = ""  # "" = no fps constraint, else max fps (60/90)
         self.audio_format = "mp3"
         self.audio_quality = "192"
+        self.audio_codec = ""  # "" = transcode, else yt-dlp acodec id (passthrough)
 
         self.process = None
         self.paused = False
@@ -395,6 +427,10 @@ class DownloadTask:
 
     def build_format_string(self):
         if self.mode == "audio":
+            if self.audio_codec:
+                # Passthrough: prefer the requested native codec, fall back to
+                # plain bestaudio so a video without it still downloads.
+                return f"bestaudio[acodec={self.audio_codec}]/bestaudio"
             return "bestaudio"
         height, width = _split_custom_quality(self.video_quality)
         ext = self.video_format
@@ -437,7 +473,15 @@ class DownloadTask:
 
     def build_postprocess_args(self):
         if self.mode == "audio":
-            quality = "0" if self.audio_quality == "best" else f"{self.audio_quality}K"
+            if self.audio_codec:
+                # Passthrough: download the native stream as-is -- no ffmpeg,
+                # no re-encode, so the codec (e.g. EC-3 Atmos) is preserved.
+                return []
+            quality = (
+                "0"
+                if self.audio_quality == "best"
+                else f"{_split_custom_audio_quality(self.audio_quality)}K"
+            )
             return ["-x", "--audio-format", self.audio_format, "--audio-quality", quality]
         return ["--merge-output-format", self.video_format]
 

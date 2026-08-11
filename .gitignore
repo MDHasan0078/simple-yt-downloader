@@ -9,3 +9,4 @@ __pycache__/
 core/.venv/
 core/build/_pyinstaller_*/
 core/build/dist/
+core-go/core-go

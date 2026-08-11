@@ -56,6 +56,7 @@ type DownloadTask struct {
 	videoQuality string
 	audioFormat  string
 	audioQuality string
+	audioCodec   string // "" = transcode, else yt-dlp acodec id (passthrough)
 
 	cmd       *exec.Cmd
 	paused    bool
@@ -197,10 +198,47 @@ func isAllDigits(s string) bool {
 	return true
 }
 
+// audioPassthroughCodecs maps a yt-dlp acodec filter token to its UI label.
+// Unlike the transcode formats, these pick a native YouTube stream by audio
+// codec and download it as-is -- no re-encode, no quality loss.
+var audioPassthroughCodecs = map[string]string{
+	"ac-3":  "Dolby Digital (AC-3)",
+	"ec-3":  "Dolby Digital Plus / Atmos (EC-3)",
+	"ac-4":  "Dolby Atmos (AC-4)",
+	"opus":  "Native Opus",
+	"mp4a":  "Native AAC / M4A",
+}
+
+// splitCustomAudioQuality returns the bitrate (kbps) for an audio quality id.
+// A preset like "192" becomes 192; a custom selection like "custom:320"
+// becomes 320. Falls back to a safe 192 kbps when missing or malformed
+// (mirrors the video splitCustomQuality pattern).
+func splitCustomAudioQuality(quality string) int {
+	value := quality
+	if value == "" {
+		value = "192"
+	}
+	if strings.HasPrefix(value, "custom:") {
+		if kbps, err := strconv.Atoi(strings.SplitN(value, ":", 2)[1]); err == nil && kbps > 0 {
+			return kbps
+		}
+		return 192
+	}
+	if kbps, err := strconv.Atoi(value); err == nil {
+		return kbps
+	}
+	return 192
+}
+
 // ---- Format string building ------------------------------------------
 
 func (t *DownloadTask) buildFormatString() string {
 	if t.mode == "audio" {
+		if t.audioCodec != "" {
+			// Passthrough: prefer the requested native codec, fall back to
+			// plain bestaudio so a video without it still downloads.
+			return "bestaudio[acodec=" + t.audioCodec + "]/bestaudio"
+		}
 		return "bestaudio"
 	}
 	res := t.videoQuality
@@ -211,9 +249,14 @@ func (t *DownloadTask) buildFormatString() string {
 
 func (t *DownloadTask) buildPostprocessArgs() []string {
 	if t.mode == "audio" {
-		quality := t.audioQuality + "K"
-		if t.audioQuality == "best" {
-			quality = "0"
+		if t.audioCodec != "" {
+			// Passthrough: download the native stream as-is -- no ffmpeg,
+			// no re-encode, so the codec (e.g. EC-3 Atmos) is preserved.
+			return []string{}
+		}
+		quality := "0"
+		if t.audioQuality != "best" {
+			quality = strconv.Itoa(splitCustomAudioQuality(t.audioQuality)) + "K"
 		}
 		return []string{"-x", "--audio-format", t.audioFormat, "--audio-quality", quality}
 	}

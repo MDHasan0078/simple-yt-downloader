@@ -18,7 +18,7 @@ Commands (each with an "id" echoed back in the reply):
                                   "entries": [{"url","title","index"}]}
     start                   -> {"url", "mode": video|audio, "video_format",
                                 "video_quality", "audio_format",
-                                "audio_quality", "task_id"?}
+                                "audio_quality", "audio_codec", "task_id"?}
                               replies {"ok":true,"task_id":...} immediately,
                               then streams "progress" and "finished" events.
     pause / resume / cancel -> {"task_id": ...}   -> {"ok": bool, "paused": bool}
@@ -89,6 +89,7 @@ class Engine:
         task.video_quality = cfg.get("video_quality") or self.settings["default_video_quality"]
         task.audio_format = cfg.get("audio_format") or self.settings["default_audio_format"]
         task.audio_quality = cfg.get("audio_quality") or self.settings["default_audio_quality"]
+        task.audio_codec = cfg.get("audio_codec") or self.settings.get("default_audio_codec", "")
         return task
 
     def _spawn_task(self, task_id, task, cfg):
@@ -170,7 +171,8 @@ class Engine:
             raise ValueError("'url' is required")
         cfg = {k: msg.get(k) for k in (
             "url", "mode", "video_format", "video_quality",
-            "audio_format", "audio_quality", "download_dir", "cookies_file",
+            "audio_format", "audio_quality", "audio_codec",
+            "download_dir", "cookies_file",
         )}
         task = self._build_task(cfg)
         task_id = msg.get("task_id") or f"t{next(_task_counter)}"

@@ -42,6 +42,7 @@ var defaults = map[string]interface{}{
 	"default_video_quality": "720",
 	"default_audio_format":  "mp3",
 	"default_audio_quality": "192",
+	"default_audio_codec":   "", // "" = transcode; else a yt-dlp acodec id (passthrough)
 	"theme":                 "dark",
 	"first_run_done":        false,
 }
@@ -86,7 +87,7 @@ func sanitizeSettings(s map[string]interface{}) {
 	}
 	for _, key := range []string{
 		"cookies_file", "default_video_format", "default_video_quality",
-		"default_audio_format", "default_audio_quality",
+		"default_audio_format", "default_audio_quality", "default_audio_codec",
 	} {
 		if _, ok := s[key].(string); !ok {
 			s[key] = defaults[key]

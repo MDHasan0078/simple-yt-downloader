@@ -16,7 +16,7 @@
 //	               video   : {"type":"video", "title", "size_str", "duration", "formats": [...]}
 //	               playlist: {"type":"playlist", "title", "entries": [{"url","title","index"}]}
 //	start        -> {"url", "mode", "video_format", "video_quality", "audio_format",
-//	                 "audio_quality", "task_id"?}
+//	                 "audio_quality", "audio_codec", "task_id"?}
 //	               replies {"ok":true,"task_id":...} immediately, then streams
 //	               "progress" and "finished" events.
 //	pause/resume/cancel -> {"task_id": ...} -> {"ok": bool, "paused": bool}
@@ -151,6 +151,7 @@ func (e *engine) buildTask(cfg map[string]interface{}) *DownloadTask {
 	task.videoQuality = firstNonEmpty(cfg["video_quality"], e.settings["default_video_quality"])
 	task.audioFormat = firstNonEmpty(cfg["audio_format"], e.settings["default_audio_format"])
 	task.audioQuality = firstNonEmpty(cfg["audio_quality"], e.settings["default_audio_quality"])
+	task.audioCodec = firstNonEmpty(cfg["audio_codec"], e.settings["default_audio_codec"])
 	return task
 }
 
@@ -262,7 +263,8 @@ func (e *engine) cmdStart(msg map[string]interface{}) (map[string]interface{}, e
 	cfg := map[string]interface{}{}
 	for _, k := range []string{
 		"url", "mode", "video_format", "video_quality",
-		"audio_format", "audio_quality", "download_dir", "cookies_file",
+		"audio_format", "audio_quality", "audio_codec",
+		"download_dir", "cookies_file",
 	} {
 		if v, ok := msg[k]; ok {
 			cfg[k] = v

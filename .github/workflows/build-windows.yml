@@ -20,6 +20,14 @@ jobs:
         with:
           go-version-file: core-go/go.mod
 
+      - name: Test engine
+        shell: pwsh
+        run: |
+          Push-Location "$env:GITHUB_WORKSPACE/core-go"
+          go vet ./...
+          go test ./...
+          Pop-Location
+
       - name: Build engine binary
         shell: pwsh
         run: |
