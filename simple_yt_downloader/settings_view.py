@@ -265,9 +265,10 @@ class SettingsView(Gtk.Box):
     def _check_dependencies_async(self):
         status = dependencies.check_all()
         yt_dlp_version = dependencies.get_yt_dlp_version() if status.get("yt-dlp") else None
-        GLib.idle_add(self._on_dependency_check_done, status, yt_dlp_version)
+        js_runtime = dependencies.get_js_runtime()
+        GLib.idle_add(self._on_dependency_check_done, status, yt_dlp_version, js_runtime)
 
-    def _on_dependency_check_done(self, status, yt_dlp_version):
+    def _on_dependency_check_done(self, status, yt_dlp_version, js_runtime):
         for child in list(self.deps_box.get_children()):
             if hasattr(child, "_dep_name"):
                 self.deps_box.remove(child)
@@ -277,6 +278,11 @@ class SettingsView(Gtk.Box):
             new_row = self._dep_row(name, bool(path), detail)
             new_row._dep_name = name
             self.deps_box.pack_start(new_row, False, False, 0)
+
+        js_label = f"JS runtime ({js_runtime})" if js_runtime else "JS runtime"
+        js_row = self._dep_row(js_label, bool(js_runtime), js_runtime or "Not found")
+        js_row._dep_name = "js-runtime"
+        self.deps_box.pack_start(js_row, False, False, 0)
 
         self.deps_box.show_all()
         return False

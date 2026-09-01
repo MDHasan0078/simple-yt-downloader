@@ -45,6 +45,15 @@ POSTPROCESS_START_RE = re.compile(r"^\[(\w+)\]")
 # turn, then letting it continue. See DownloadTask._maybe_gate_postprocessing().
 _MERGE_LOCK = threading.Lock()
 
+# YouTube now 403s on the default android-vr player client (its formats need
+# a GVS PO token). Force the web-embedded client, which serves the full
+# format set and downloads without a token; the JS runtime solves the
+# n-challenge that web_embedded formats require.
+YTDLP_EXTRACTOR_ARGS = (
+    "--extractor-args", "youtube:player_client=web_embedded",
+    "--js-runtimes", "node",
+)
+
 PHASE_VIDEO = "video"
 PHASE_AUDIO = "audio"
 PHASE_MERGE = "merge"
@@ -160,7 +169,7 @@ def fetch_video_info(url, cookie_args, timeout=30):
     flat-playlist -- that skips format resolution, which is exactly what we
     need here). Returns {"formats": [...], "duration": seconds_or_None}.
     """
-    cmd = ["yt-dlp", *cookie_args, "-j", "--no-playlist", url]
+    cmd = ["yt-dlp", *YTDLP_EXTRACTOR_ARGS, *cookie_args, "-j", "--no-playlist", url]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         if result.returncode != 0:
@@ -363,7 +372,7 @@ class DownloadTask:
         Populates self.is_playlist / self.playlist_entries / self.title.
         Raises RuntimeError on failure (bad link, no connection, etc).
         """
-        cmd = ["yt-dlp", *self._cookie_args(), "--flat-playlist", "--dump-single-json", self.url]
+        cmd = ["yt-dlp", *YTDLP_EXTRACTOR_ARGS, *self._cookie_args(), "--flat-playlist", "--dump-single-json", self.url]
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         except subprocess.TimeoutExpired:
@@ -402,7 +411,7 @@ class DownloadTask:
         """Best-effort file size estimate for the currently selected format."""
         fmt = self.build_format_string()
         cmd = [
-            "yt-dlp", *self._cookie_args(),
+            "yt-dlp", *YTDLP_EXTRACTOR_ARGS, *self._cookie_args(),
             "-f", fmt,
             "--print", "%(filesize,filesize_approx)r",
             self.url,
@@ -531,7 +540,7 @@ class DownloadTask:
 
         os.makedirs(self.download_dir, exist_ok=True)
         cmd = [
-            "yt-dlp", *self._cookie_args(),
+            "yt-dlp", *YTDLP_EXTRACTOR_ARGS, *self._cookie_args(),
             "-f", self.build_format_string(),
             *self.build_postprocess_args(),
             "--newline",

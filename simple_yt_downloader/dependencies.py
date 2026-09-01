@@ -13,10 +13,23 @@ import subprocess
 
 CHECKED_BINARIES = ["yt-dlp", "ffmpeg"]
 
+# JS runtimes yt-dlp can use to solve the n-challenge. Soft dependency: called
+# out in the Settings view for visibility, but never part of the apt install
+# flow (node/deno are optional at runtime).
+JS_RUNTIME_BINARIES = ["node", "deno"]
+
 
 def check_binary(name):
     """Return the resolved path if found on PATH, else None."""
     return shutil.which(name)
+
+
+def get_js_runtime():
+    """Return the first available JS runtime yt-dlp supports, else None."""
+    for name in JS_RUNTIME_BINARIES:
+        if shutil.which(name):
+            return name
+    return None
 
 
 def check_all():
